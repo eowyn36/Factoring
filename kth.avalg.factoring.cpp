@@ -17,6 +17,7 @@ using std::cout;
 using std::cin;
 using std::vector;
 using std::queue;
+using std::string;
 
 typedef std::vector<mpz_class> mpz_vector;
 
@@ -24,8 +25,12 @@ typedef std::vector<mpz_class> mpz_vector;
 // 175891579187581657617 is 68
 const static unsigned MAX_DIGITS = 65;
 
-unsigned getNumberOfDigits (unsigned i) {
-    return i > 0 ? (int) log10 ((double) i) + 1 : 1;
+template<typename T>
+void print(string title, vector<T> vector) {
+    cout << title << ": " << std::endl;
+    for (int i = 0; i < vector.size(); i++)
+        cout << vector[i] << std::endl;
+    cout << std::endl;
 }
 
 long gcd(long a, long b) {
@@ -94,11 +99,13 @@ void FermatsFactorization(queue<mpz_class> & queue, vector<mpz_class> & primes){
 
 
 // STEP 1
-// Calculate B (smoothness bound)
-// Find all primes smaller than the bound (Sieve of Eratosthenes)
-// find legendre's for all the primes (mpz_legendre)
-// pick the ones that resulted 1 and add them to factor base
+// Calculate B (smoothness bound) TODO
+// Find all primes smaller than the bound (Sieve of Eratosthenes) DONE
+// find legendre's for all the primes (mpz_legendre) DONE
+// pick the ones that resulted 1 and add them to factor base DONE
 
+// STEP 1.5?
+// Construct the initial sieve, V
 
 // STEP 2
 // solve for x^2 ≡ n (mod p)
@@ -111,7 +118,7 @@ void FermatsFactorization(queue<mpz_class> & queue, vector<mpz_class> & primes){
 // STEP 3
 // MAGIC
 
-void getFactorBase(mpz_class N, long B){
+void getFactorBase(mpz_class N, long B, vector<int> & factorBase){
     // Sieve of Eratosthenes
     vector<bool> sieve(B + 1, false);
     for (int i = 2; i <= B; i++) {
@@ -121,7 +128,6 @@ void getFactorBase(mpz_class N, long B){
     }
     
     // Pick the primes which legendre is 1 for the factor base
-    vector<int> factorBase;
     // TODO not sure about this
     if ( N % 2 == 1)
         factorBase.push_back(2);
@@ -130,13 +136,43 @@ void getFactorBase(mpz_class N, long B){
         if(sieve[i] == false && mpz_legendre(N.get_mpz_t(), mpz_class(i).get_mpz_t()) == 1 )
             factorBase.push_back(i);
     }
+    
+    print("Factor Base", factorBase);
+}
+
+void contructSieve(mpz_class N, vector<int> & factorBase){
+    long NRoot = ceil(sqrt(N.get_si()));
+    vector<mpz_class> V;
+    int sieveLenght = 60;
+    for(int x = 0; x < sieveLenght; x++) {
+        V.push_back( pow(x + NRoot, 2) - N );
+    }
+    
+    //TODO mod pls?
+    
+    /*
+    for(int i = 0; i < factorBase.size(); i++) {
+        int p = factorBase[i];
+        for(int x = 0; x < sieveLenght; x += p) {
+            V[x] /= p;
+        }
+    }
+    */
+    
+    print("Vs", V);
 }
 
 int main(int argc, const char * argv[]) {
+    //FermatsFactorization
     queue<mpz_class> queue;
     vector<mpz_class> primes;
+    
+    //Quadratic Sieve
+    vector<int> factorBase;
+    
+    //Common
     vector<mpz_class> Ns;
-    std::string N;
+    string N;
     while (cin >> N)
         Ns.push_back(mpz_class(N, 10));
     
@@ -144,7 +180,8 @@ int main(int argc, const char * argv[]) {
         primes.clear();
         queue.empty();
         
-        getFactorBase(Ns[j], 29);
+        getFactorBase(Ns[j], 29, factorBase);
+        contructSieve(Ns[j], factorBase);
         
         if (mpz_sizeinbase(Ns[j].get_mpz_t(), 2) > MAX_DIGITS) {
             cout << "fail" << std::endl << std::endl;
