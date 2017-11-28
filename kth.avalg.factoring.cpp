@@ -76,6 +76,22 @@ void FermatsFactorization(queue<long> & queue, vector<long> & primes){
     }
 }
 
+// STEP 1
+// find legendre's for N (mpz_legendre)
+// pick the ones that resulted 1 until we have B + 1 primes
+
+
+// STEP 2
+// solve for x^2 ≡ n (mod p)
+// simple approach:
+// r = n (mod p) -> r + p -> check if its a square
+// keep adding p until you find another square (Why two x values ?? )
+// not-so-simple approach: Tonelli-Shanks algorithm
+
+
+// STEP 3
+// MAGIC
+
 int main(int argc, const char * argv[]) {
     queue<long> queue;
     vector<long> primes;
@@ -98,6 +114,8 @@ int main(int argc, const char * argv[]) {
         primes.clear();
         queue.empty();
         N = Ns[j];
+        
+        //TODO check with maxsize
         if (N > 9223372036854775805) {
             cout << "fail" << std::endl << std::endl;
             continue;
@@ -105,6 +123,13 @@ int main(int argc, const char * argv[]) {
 
         queue.push(N);
         FermatsFactorization(queue, primes);
+        
+        /*** Quadric Sieve ***/
+        // TODO is these requirements valid?
+        //Requirements
+        //1. The number is composite
+        //2. The number has no prime factors up to its logarithm base ten
+        //3. The number is not a power
         
         std::sort(primes.begin(), primes.end());
         for (int i = 0; i < primes.size(); i++)
