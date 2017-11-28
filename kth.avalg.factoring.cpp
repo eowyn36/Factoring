@@ -11,13 +11,17 @@
 #include <vector>
 #include <queue>
 #include <algorithm>
+#include <gmpxx.h>
 
 using std::cout;
 using std::cin;
 using std::vector;
 using std::queue;
 
-const static unsigned MAX_DIGITS = 100;
+typedef std::vector<mpz_class> mpz_vector;
+
+// TODO shouldnt it be 100?
+const static unsigned MAX_DIGITS = 65;
 
 unsigned getNumberOfDigits (unsigned i) {
     return i > 0 ? (int) log10 ((double) i) + 1 : 1;
@@ -28,7 +32,7 @@ long gcd(long a, long b) {
 }
 
 // Simple Prime check
-bool isPrime (long p) {
+bool isPrime (mpz_class p) {
     if (p <= 1)
         return false;
     else if ( p <= 3)
@@ -41,14 +45,16 @@ bool isPrime (long p) {
     return true;
 }
 
-void FermatsFactorizationStep(long N, queue<long> & queue){
-    int NRoot = ceil(sqrt(N)), a, b;
+void FermatsFactorizationStep(mpz_class N, queue<mpz_class> & queue){
+    //cout << "in FermatsFactorizationStep \n";
+    mpz_class NRoot = sqrt(N);
+    long a, b;
     double bDouble;
     
-    for(a = NRoot; a < 10000; a++) {
-        bDouble = sqrt(pow(a, 2) - N);
+    for(a = NRoot.get_si(); a < 10000; a++) {
+        bDouble = sqrt(pow(a, 2) - N.get_si());
         
-        b = (int)bDouble;
+        b = (long)bDouble;
         if(bDouble != b) // b is not a perfect square
             continue;
         
@@ -61,26 +67,36 @@ void FermatsFactorizationStep(long N, queue<long> & queue){
     }
 }
 
-void FermatsFactorization(queue<long> & queue, vector<long> & primes){
+void FermatsFactorization(queue<mpz_class> & queue, vector<mpz_class> & primes){
     while (!queue.empty() ){
-        long N = queue.front();
+        //cout << "Proccessing queue \n";
+        mpz_class factor = queue.front();
         queue.pop();
-        if( isPrime(N) ){
-            primes.push_back(N);
-        } else if(N % 2 == 0 && isPrime(N/2)){
+        if( isPrime(factor) ){
+            primes.push_back(factor);
+        } else if(factor % 2 == 0 && isPrime(factor/2)){
             primes.push_back(2);
-            primes.push_back(N/2);
+            primes.push_back(factor/2);
         } else {
-            FermatsFactorizationStep(N, queue);
+            FermatsFactorizationStep(factor, queue);
         }
     }
 }
+
+
+/*** Quadric Sieve ***/
+// TODO is these requirements valid?
+//Requirements
+//1. The number is composite
+//2. The number has no prime factors up to its logarithm base ten
+//3. The number is not a power
+
 
 // STEP 1
 // Calculate B (smoothness bound)
 // Find all primes smaller than the bound (Sieve of Eratosthenes)
 // find legendre's for all the primes (mpz_legendre)
-// pick the ones that resulted 1 until and add them to factor base
+// pick the ones that resulted 1 and add them to factor base
 
 
 // STEP 2
@@ -95,44 +111,25 @@ void FermatsFactorization(queue<long> & queue, vector<long> & primes){
 // MAGIC
 
 int main(int argc, const char * argv[]) {
-    queue<long> queue;
-    vector<long> primes;
-    vector<long long> Ns;
-    long long N;
-
-    //cout << std::numeric_limits<long long>::max() << std::endl;
-    while (cin >> N)
-        Ns.push_back(N);
+    queue<mpz_class> queue;
+    vector<mpz_class> primes;
+    vector<mpz_class> Ns;
+    std::string N;
     
-    /*** Stupid fix for the bug that too big numbers cause ***/
-    cin.clear();
-    if(Ns.size() < 3)
-        Ns.push_back(9223372036854775806);
     while (cin >> N)
-        Ns.push_back(N);
-    /*** -- ***/
+        Ns.push_back(mpz_class(N, 10));
     
     for (int j = 0; j < Ns.size(); j++) {
         primes.clear();
         queue.empty();
-        N = Ns[j];
         
-        //TODO check with maxsize
-        if (N > 9223372036854775805) {
+        if (mpz_sizeinbase(Ns[j].get_mpz_t(), 2) > MAX_DIGITS) {
             cout << "fail" << std::endl << std::endl;
             continue;
         }
-
-        queue.push(N);
+        queue.push(Ns[j]);
         FermatsFactorization(queue, primes);
-        
-        /*** Quadric Sieve ***/
-        // TODO is these requirements valid?
-        //Requirements
-        //1. The number is composite
-        //2. The number has no prime factors up to its logarithm base ten
-        //3. The number is not a power
-        
+
         std::sort(primes.begin(), primes.end());
         for (int i = 0; i < primes.size(); i++)
             cout << primes[i] << std::endl;
