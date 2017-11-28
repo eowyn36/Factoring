@@ -21,6 +21,7 @@ using std::queue;
 typedef std::vector<mpz_class> mpz_vector;
 
 // TODO shouldnt it be 100?
+// 175891579187581657617 is 68
 const static unsigned MAX_DIGITS = 65;
 
 unsigned getNumberOfDigits (unsigned i) {
@@ -84,7 +85,7 @@ void FermatsFactorization(queue<mpz_class> & queue, vector<mpz_class> & primes){
 }
 
 
-/*** Quadric Sieve ***/
+/*** Quadratic Sieve ***/
 // TODO is these requirements valid?
 //Requirements
 //1. The number is composite
@@ -110,12 +111,32 @@ void FermatsFactorization(queue<mpz_class> & queue, vector<mpz_class> & primes){
 // STEP 3
 // MAGIC
 
+void getFactorBase(mpz_class N, long B){
+    // Sieve of Eratosthenes
+    vector<bool> sieve(B + 1, false);
+    for (int i = 2; i <= B; i++) {
+        for (int j = i+i; j <= B; j += i) {
+            sieve[j] = true;
+        }
+    }
+    
+    // Pick the primes which legendre is 1 for the factor base
+    vector<int> factorBase;
+    // TODO not sure about this
+    if ( N % 2 == 1)
+        factorBase.push_back(2);
+    
+    for (int i = 2; i <= B; i++) {
+        if(sieve[i] == false && mpz_legendre(N.get_mpz_t(), mpz_class(i).get_mpz_t()) == 1 )
+            factorBase.push_back(i);
+    }
+}
+
 int main(int argc, const char * argv[]) {
     queue<mpz_class> queue;
     vector<mpz_class> primes;
     vector<mpz_class> Ns;
     std::string N;
-    
     while (cin >> N)
         Ns.push_back(mpz_class(N, 10));
     
@@ -123,17 +144,20 @@ int main(int argc, const char * argv[]) {
         primes.clear();
         queue.empty();
         
+        getFactorBase(Ns[j], 29);
+        
         if (mpz_sizeinbase(Ns[j].get_mpz_t(), 2) > MAX_DIGITS) {
             cout << "fail" << std::endl << std::endl;
             continue;
         }
+        /*
         queue.push(Ns[j]);
         FermatsFactorization(queue, primes);
 
         std::sort(primes.begin(), primes.end());
         for (int i = 0; i < primes.size(); i++)
             cout << primes[i] << std::endl;
-        
+        */
         cout << std::endl;
     }
     return 0;
