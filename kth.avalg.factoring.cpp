@@ -140,24 +140,39 @@ void getFactorBase(mpz_class N, long B, vector<int> & factorBase){
     print("Factor Base", factorBase);
 }
 
+void processSieve(vector<mpz_class> & V, long firstIndex, int p){
+    cout << "Process for: " << p << " start from: " << firstIndex << std::endl;
+    for(long i = firstIndex; i < V.size(); i += p)
+        V[i] /= p;
+}
+
 void contructSieve(mpz_class N, vector<int> & factorBase){
-    long NRoot = ceil(sqrt(N.get_si()));
+    mpz_class NRoot = ceil(sqrt(N.get_si()));
     vector<mpz_class> V;
     int sieveLenght = 60;
     for(int x = 0; x < sieveLenght; x++) {
-        V.push_back( pow(x + NRoot, 2) - N );
+        V.push_back( pow(x + NRoot.get_si(), 2) - N );
     }
     
-    //TODO mod pls?
+    //Process once for prime 2
+    processSieve(V, 1, 2);
     
-    /*
-    for(int i = 0; i < factorBase.size(); i++) {
-        int p = factorBase[i];
-        for(int x = 0; x < sieveLenght; x += p) {
-            V[x] /= p;
+    for(int i = 1; i < factorBase.size(); i++) {
+        int numberOfXs = 0, p = factorBase[i];
+        mpz_class firstIndex, r = N % p;
+        while(true) {
+            if(numberOfXs == 2)
+                break;
+            r +=p;
+            if(mpz_perfect_square_p(r.get_mpz_t()) != 0) {
+                numberOfXs++;
+                firstIndex = (sqrt(r) - NRoot) % p;
+                if(firstIndex < 0)
+                    firstIndex += p;
+                processSieve(V, firstIndex.get_si(), p);
+            }
         }
     }
-    */
     
     print("Vs", V);
 }
