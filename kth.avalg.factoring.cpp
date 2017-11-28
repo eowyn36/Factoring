@@ -77,8 +77,10 @@ void FermatsFactorization(queue<long> & queue, vector<long> & primes){
 }
 
 // STEP 1
-// find legendre's for N (mpz_legendre)
-// pick the ones that resulted 1 until we have B + 1 primes
+// Calculate B (smoothness bound)
+// Find all primes smaller than the bound (Sieve of Eratosthenes)
+// find legendre's for all the primes (mpz_legendre)
+// pick the ones that resulted 1 until and add them to factor base
 
 
 // STEP 2
