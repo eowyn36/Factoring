@@ -9,6 +9,7 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <map>
 #include <queue>
 #include <algorithm>
 #include <gmpxx.h>
@@ -18,6 +19,7 @@ using std::cin;
 using std::vector;
 using std::queue;
 using std::string;
+using std::map;
 
 typedef std::vector<mpz_class> mpz_vector;
 
@@ -140,15 +142,26 @@ void getFactorBase(mpz_class N, long B, vector<int> & factorBase){
     print("Factor Base", factorBase);
 }
 
-void processSieve(vector<mpz_class> & V, long firstIndex, int p){
-    cout << "Process for: " << p << " start from: " << firstIndex << std::endl;
-    for(long i = firstIndex; i < V.size(); i += p)
+void processSieve(vector<mpz_class> & V, map<long, vector<int>> & exponents, long firstIndex, int p){
+    std::vector<int> temp;
+    for(long i = firstIndex; i < V.size(); i += p) {
         V[i] /= p;
+        if(exponents.find(i) == exponents.end()) {
+            temp.clear();
+            temp.push_back(p);
+            exponents.insert(std::pair<long, vector<int>>(i, temp));
+        } else {
+            temp = exponents.at(i);
+            temp.push_back(p);
+            exponents[i] = temp;
+        }
+    }
 }
 
 void contructSieve(mpz_class N, vector<int> & factorBase){
     mpz_class NRoot = ceil(sqrt(N.get_si()));
     vector<mpz_class> V;
+    map<long, vector<int>> exponents;
     
     //TODO how to calcualte sieve length ??
     int sieveLenght = 100;
@@ -157,7 +170,7 @@ void contructSieve(mpz_class N, vector<int> & factorBase){
     }
     
     //Process once for prime 2
-    processSieve(V, 1, 2);
+    processSieve(V, exponents, 1, 2);
     
     for(int i = 1; i < factorBase.size(); i++) {
         int numberOfXs = 0, p = factorBase[i];
@@ -171,14 +184,14 @@ void contructSieve(mpz_class N, vector<int> & factorBase){
                 firstIndex = (sqrt(r) - NRoot) % p;
                 if(firstIndex < 0)
                     firstIndex += p;
-                processSieve(V, firstIndex.get_si(), p);
+                processSieve(V, exponents, firstIndex.get_si(), p);
             }
         }
     }
     
     for(int x = 0; x < V.size(); x++) {
         if(V[x] == 1)
-            cout << x << std::endl;
+            print(std::to_string(x), exponents.at(x));
     }
     //print("Vs", V);
 }
