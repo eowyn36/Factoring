@@ -105,14 +105,14 @@ void FermatsFactorization(queue<mpz_class> & queue, vector<mpz_class> & primes){
 // pick the ones that resulted 1 and add them to factor base DONE
 
 // STEP 1.5?
-// Construct the initial sieve, V
+// Construct the initial sieve, V DONE
 
 // STEP 2
 // solve for x^2 ≡ n (mod p)
-// simple approach:
-// r = n (mod p) -> r + p -> check if its a square
-// keep adding p until you find another square (Why two x values ?? )
-// not-so-simple approach: Tonelli-Shanks algorithm
+// 2.1 simple approach: DONE
+// 2.1.1 r = n (mod p) -> r + p -> check if its a square DONE
+// 2.1.2 keep adding p until you find another square DONE
+// 2.2 not-so-simple approach: Tonelli-Shanks algorithm
 
 
 // STEP 3
@@ -149,7 +149,9 @@ void processSieve(vector<mpz_class> & V, long firstIndex, int p){
 void contructSieve(mpz_class N, vector<int> & factorBase){
     mpz_class NRoot = ceil(sqrt(N.get_si()));
     vector<mpz_class> V;
-    int sieveLenght = 60;
+    
+    //TODO how to calcualte sieve length ??
+    int sieveLenght = 100;
     for(int x = 0; x < sieveLenght; x++) {
         V.push_back( pow(x + NRoot.get_si(), 2) - N );
     }
@@ -174,7 +176,11 @@ void contructSieve(mpz_class N, vector<int> & factorBase){
         }
     }
     
-    print("Vs", V);
+    for(int x = 0; x < V.size(); x++) {
+        if(V[x] == 1)
+            cout << x << std::endl;
+    }
+    //print("Vs", V);
 }
 
 int main(int argc, const char * argv[]) {
