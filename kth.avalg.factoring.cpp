@@ -13,6 +13,7 @@
 #include <queue>
 #include <algorithm>
 #include <gmpxx.h>
+#include "Matrix.cpp"
 
 using std::cout;
 using std::cin;
@@ -26,6 +27,8 @@ typedef std::vector<mpz_class> mpz_vector;
 // TODO shouldnt it be 100?
 // 175891579187581657617 is 68
 const static unsigned MAX_DIGITS = 65;
+const static unsigned B_SMOOTH = 40;
+const static unsigned SIEVE_LENGTH = 100; //TODO how to calcualte sieve length ??
 
 template<typename T>
 void print(string title, vector<T> vector) {
@@ -54,7 +57,6 @@ bool isPrime (mpz_class p) {
 }
 
 void FermatsFactorizationStep(mpz_class N, queue<mpz_class> & queue){
-    //cout << "in FermatsFactorizationStep \n";
     mpz_class NRoot = sqrt(N);
     long a, b;
     double bDouble;
@@ -77,7 +79,6 @@ void FermatsFactorizationStep(mpz_class N, queue<mpz_class> & queue){
 
 void FermatsFactorization(queue<mpz_class> & queue, vector<mpz_class> & primes){
     while (!queue.empty() ){
-        //cout << "Proccessing queue \n";
         mpz_class factor = queue.front();
         queue.pop();
         if( isPrime(factor) ){
@@ -116,12 +117,12 @@ void FermatsFactorization(queue<mpz_class> & queue, vector<mpz_class> & primes){
 // 2.1.2 keep adding p until you find another square DONE
 // 2.2 not-so-simple approach: Tonelli-Shanks algorithm
 
-
 // STEP 3
 // MAGIC
 
-void getFactorBase(mpz_class N, long B, vector<int> & factorBase){
+void getFactorBase(mpz_class N, vector<int> & factorBase){
     // Sieve of Eratosthenes
+    long B = B_SMOOTH;
     vector<bool> sieve(B + 1, false);
     for (int i = 2; i <= B; i++) {
         for (int j = i+i; j <= B; j += i) {
@@ -131,8 +132,9 @@ void getFactorBase(mpz_class N, long B, vector<int> & factorBase){
     
     // Pick the primes which legendre is 1 for the factor base
     // TODO not sure about this
-    if ( N % 2 == 1)
-        factorBase.push_back(2);
+    // TODO well this BREAKS stuff !!
+    //if ( N % 2 == 1)
+    //    factorBase.push_back(2);
     
     for (int i = 2; i <= B; i++) {
         if(sieve[i] == false && mpz_legendre(N.get_mpz_t(), mpz_class(i).get_mpz_t()) == 1 )
@@ -144,48 +146,57 @@ void getFactorBase(mpz_class N, long B, vector<int> & factorBase){
 
 void processSieve(vector<mpz_class> & V, map<long, vector<int>> & exponents, long firstIndex, int p){
     std::vector<int> temp;
+    long Vi;
     for(long i = firstIndex; i < V.size(); i += p) {
-        V[i] /= p;
-        if(exponents.find(i) == exponents.end()) {
-            temp.clear();
-            temp.push_back(p);
-            exponents.insert(std::pair<long, vector<int>>(i, temp));
-        } else {
-            temp = exponents.at(i);
-            temp.push_back(p);
-            exponents[i] = temp;
+        Vi = V[i].get_si();
+        while(Vi % p == 0) {
+            Vi /= p;
+            V[i] = Vi;
+            if(exponents.find(i) == exponents.end()) {
+                temp.clear();
+                temp.push_back(p);
+                exponents.insert(std::pair<long, vector<int>>(i, temp));
+            } else {
+                temp = exponents.at(i);
+                temp.push_back(p);
+                exponents[i] = temp;
+            }
         }
     }
 }
 
 void contructSieve(mpz_class N, vector<int> & factorBase){
-    mpz_class NRoot = ceil(sqrt(N.get_si()));
+    mpz_class NRoot = floor(sqrt(N.get_si()));
     vector<mpz_class> V;
     map<long, vector<int>> exponents;
     
-    //TODO how to calcualte sieve length ??
-    int sieveLenght = 100;
+    int sieveLenght = SIEVE_LENGTH;
     for(int x = 0; x < sieveLenght; x++) {
-        V.push_back( pow(x + NRoot.get_si(), 2) - N );
+        V.push_back( pow(x + NRoot.get_si(), 2) - N ); // Q(x) = (x + √n)^2 − N
+         /*
+         x: 1 vi: 1    153 = 3^2 17
+         x: 4 vi: 1
+         x: 12 vi: 1
+         x: 21 vi: 1
+         x: 52 vi: 1
+         */
     }
     
-    //Process once for prime 2
-    processSieve(V, exponents, 1, 2);
-    
-    for(int i = 1; i < factorBase.size(); i++) {
+    for(int i = 0; i < factorBase.size(); i++) {
         int numberOfXs = 0, p = factorBase[i];
         mpz_class firstIndex, r = N % p;
         while(true) {
-            if(numberOfXs == 2)
+            if(numberOfXs == 2 || (numberOfXs == 1 && p == 2))
                 break;
-            r +=p;
+            
+            // TODO no need to calculate for x2 since x2 = p - x1 
             if(mpz_perfect_square_p(r.get_mpz_t()) != 0) {
                 numberOfXs++;
-                firstIndex = (sqrt(r) - NRoot) % p;
-                if(firstIndex < 0)
-                    firstIndex += p;
+                firstIndex = (((sqrt(r) - NRoot) % p) + p) % p;
+                cout << p << ": " << sqrt(r) << " findex: " << firstIndex << std::endl;
                 processSieve(V, exponents, firstIndex.get_si(), p);
             }
+            r +=p;
         }
     }
     
@@ -193,8 +204,27 @@ void contructSieve(mpz_class N, vector<int> & factorBase){
         if(V[x] == 1)
             print(std::to_string(x), exponents.at(x));
     }
-    //print("Vs", V);
 }
+/*
+int main()
+{
+    double M[4][3] = {
+        { 0, 1, 1 },
+        { 0, 1, 1 },
+        { 0, 1, 1 },
+        { 1, 0, 1 }
+    };
+    
+    to_reduced_row_echelon_form(M);
+    for (int i = 0; i < 4; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+            std::cout << M[i][j] << '\t';
+        std::cout << "\n";
+    }
+    
+    return EXIT_SUCCESS;
+}*/
 
 int main(int argc, const char * argv[]) {
     //FermatsFactorization
@@ -214,7 +244,7 @@ int main(int argc, const char * argv[]) {
         primes.clear();
         queue.empty();
         
-        getFactorBase(Ns[j], 29, factorBase);
+        getFactorBase(Ns[j], factorBase);
         contructSieve(Ns[j], factorBase);
         
         if (mpz_sizeinbase(Ns[j].get_mpz_t(), 2) > MAX_DIGITS) {
@@ -228,8 +258,24 @@ int main(int argc, const char * argv[]) {
         std::sort(primes.begin(), primes.end());
         for (int i = 0; i < primes.size(); i++)
             cout << primes[i] << std::endl;
-        */
+         */
         cout << std::endl;
     }
     return 0;
 }
+
+/*
+ 2: 1 1 index0 0
+ 3: 1 2 index0 1
+ 13: 8 5 index12 9
+ 17: 7 10 index1 4
+ 19: 5 14 index14 4
+ 29: 12 17 index7 12
+ 
+ 41: 16 25 index8 17
+ 43: 1 42 index7 5
+ 53: 15 38 index38 8
+ 59: 5 54 index5 54
+ 73: 3 70 index0 67
+ 79: 22 57 index43 78
+ */
