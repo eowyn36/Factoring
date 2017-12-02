@@ -173,13 +173,6 @@ void contructSieve(mpz_class N, vector<int> & factorBase){
     int sieveLenght = SIEVE_LENGTH;
     for(int x = 0; x < sieveLenght; x++) {
         V.push_back( pow(x + NRoot.get_si(), 2) - N ); // Q(x) = (x + √n)^2 − N
-         /*
-         x: 1 vi: 1    153 = 3^2 17
-         x: 4 vi: 1
-         x: 12 vi: 1
-         x: 21 vi: 1
-         x: 52 vi: 1
-         */
     }
     
     for(int i = 0; i < factorBase.size(); i++) {
@@ -193,38 +186,44 @@ void contructSieve(mpz_class N, vector<int> & factorBase){
             if(mpz_perfect_square_p(r.get_mpz_t()) != 0) {
                 numberOfXs++;
                 firstIndex = (((sqrt(r) - NRoot) % p) + p) % p;
-                cout << p << ": " << sqrt(r) << " findex: " << firstIndex << std::endl;
                 processSieve(V, exponents, firstIndex.get_si(), p);
             }
             r +=p;
         }
     }
     
+    int numberOfSmooths = 0;
     for(int x = 0; x < V.size(); x++) {
-        if(V[x] == 1)
+        if(V[x] == 1){
             print(std::to_string(x), exponents.at(x));
+            numberOfSmooths++;
+        }
     }
-}
-/*
-int main()
-{
-    double M[4][3] = {
-        { 0, 1, 1 },
-        { 0, 1, 1 },
-        { 0, 1, 1 },
-        { 1, 0, 1 }
-    };
     
-    to_reduced_row_echelon_form(M);
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = 0; j < 3; ++j)
+    long M[numberOfSmooths][factorBase.size()];
+
+    for(int x = 0, i = 0; x < V.size(); x++) {
+        if(V[x] == 1){
+            for(int j = 0; j < factorBase.size(); j++) {
+                vector<int> exponent = exponents.at(x);
+                int p = factorBase[j];
+                long cnt = count(exponent.begin(), exponent.end(), p);
+                M[i][j] = cnt % 2;
+            }
+            i++;
+        }
+    }
+    for (int j = 0; j < factorBase.size(); ++j)
+        std::cout << factorBase[j] << '\t';
+    std::cout << "\n";
+    
+    for (int i = 0; i < numberOfSmooths-1; ++i) {
+        for (int j = 0; j < factorBase.size(); ++j)
             std::cout << M[i][j] << '\t';
         std::cout << "\n";
     }
-    
-    return EXIT_SUCCESS;
-}*/
+    // to_reduced_row_echelon_form(M);
+}
 
 int main(int argc, const char * argv[]) {
     //FermatsFactorization
@@ -263,19 +262,3 @@ int main(int argc, const char * argv[]) {
     }
     return 0;
 }
-
-/*
- 2: 1 1 index0 0
- 3: 1 2 index0 1
- 13: 8 5 index12 9
- 17: 7 10 index1 4
- 19: 5 14 index14 4
- 29: 12 17 index7 12
- 
- 41: 16 25 index8 17
- 43: 1 42 index7 5
- 53: 15 38 index38 8
- 59: 5 54 index5 54
- 73: 3 70 index0 67
- 79: 22 57 index43 78
- */
